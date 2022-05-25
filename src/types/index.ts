@@ -1,4 +1,5 @@
 export type TExrate = 'exrate';
+export type TExrateStatus = 'idle' | 'up' | 'down';
 
 export interface IExrate {
   time: string;
@@ -7,6 +8,13 @@ export interface IExrate {
   rate: number;
   type: TExrate;
 }
-// {"time":"2022-05-24T18:43:48.7000000Z",
-// "asset_id_base":"BTC","asset_id_quote":"USD",
-// "rate":29367.015,"type":"exrate"}
+
+export interface IHistoricalData {
+  price: number;
+  size: number;
+  symbol_id: string;
+  taker_side: string;
+  time_coinapi: string;
+  time_exchange: string;
+  uuid: string;
+}

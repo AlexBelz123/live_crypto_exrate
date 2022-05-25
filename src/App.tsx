@@ -1,82 +1,97 @@
 import { useEffect, useRef, useState } from 'react';
 import ExRate from './components/ExRate';
 import Graph from './components/Graph';
+import Subscribtion from './components/Subscribtion';
 import { fetchHistoricalTrades } from './services';
-import { getPrevDate } from './utils/getPrevDate';
-import { IExrate } from './types';
-import { GlobalStyle } from './utils/globalStyles';
+import { usePrevious, useAsync } from './hooks';
+import { formatTime } from './utils/formatTime';
+import { ErrorFallback } from './utils/errorFallback';
+import { ErrorBoundary } from 'react-error-boundary';
+import { IExrate, IHistoricalData, TExrateStatus } from './types';
+import styled from 'styled-components';
 
-const data = [
-  { name: 'Page A', uv: 4000, pv: 2400, amt: 2400 },
-  { name: 'Page B', uv: 3000, pv: 1398, amt: 2210 },
-  { name: 'Page C', uv: 2000, pv: 9800, amt: 2290 },
-  { name: 'Page D', uv: 2780, pv: 3908, amt: 2000 },
-  { name: 'Page E', uv: 1890, pv: 4800, amt: 2181 },
-  { name: 'Page F', uv: 2390, pv: 3800, amt: 2500 },
-  { name: 'Page G', uv: 3490, pv: 4300, amt: 2100 },
-];
+const Container = styled.div`
+  padding: 0 10rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
 
 function App() {
-  const [pastData, setPastData] = useState({});
+  const [pastData, setPastData] = useState<IHistoricalData[]>([]);
   const [exrate, setExrate] = useState<IExrate | null>(null);
-  const [error, setError] = useState({});
-  const ws = useRef<any>(null);
+  const ws = useRef<WebSocket>();
+  const prevExrate = usePrevious<number>(exrate?.rate || 0);
+  let status: TExrateStatus = 'idle';
+  status = exrate && prevExrate < exrate.rate ? 'down' : 'up';
 
-  const sendMessage = () => {
+  const subscribe = () => {
     const jsonMsg = JSON.stringify({
       type: 'hello',
-      apikey: '4E1A9D22-2DE1-4429-BBEA-C28497A67479',
+      apikey: 'F2228AEF-B564-4705-A4F5-1D4DE4803E88',
       heartbeat: false,
       subscribe_data_type: ['exrate'],
       subscribe_filter_asset_id: ['BTC/USD'],
     });
-    ws.current.send(jsonMsg);
-  };
-
-  const closeConnection = () => {
-    ws.current.close();
+    ws.current?.send(jsonMsg);
   };
 
   useEffect(() => {
-    ws.current = new WebSocket('ws://ws-sandbox.coinapi.io/v1/');
+    function connect() {
+      ws.current = new WebSocket('ws://ws-sandbox.coinapi.io/v1/');
 
-    ws.current.onopen = function () {
-      console.log('WebSocket Client Connected');
-    };
+      ws.current.onopen = function () {
+        console.log('WebSocket Client Connected');
+      };
 
-    ws.current.onclose = function () {
-      console.log('Closed');
-    };
+      ws.current.onclose = function (e) {
+        console.log(
+          'Socket is closed. Reconnect will be attempted in 1 second.',
+          e.reason
+        );
+        setTimeout(function () {
+          connect();
+        }, 1000);
+      };
 
-    ws.current.onerror = (error: Error) => {
-      console.log('error', error);
-    };
+      ws.current.onerror = (error) => {
+        console.log('error', error);
+      };
 
-    ws.current.onmessage = (event: any) => {
-      const parsedData = JSON.parse(event.data);
-      if (parsedData.type === 'exrate') setExrate(parsedData);
-    };
+      ws.current.onmessage = (event) => {
+        const parsedData = JSON.parse(event.data);
+        if (parsedData.type === 'exrate') setExrate(parsedData);
+      };
+    }
+
+    connect();
+
+    // I fetched only static data cuz of API limit
+    // we can fetch new data when exrate is updated
+    fetchHistoricalTrades<IHistoricalData[]>().then(
+      (res) => {
+        const exrates = res.data;
+
+        exrates.forEach((exrate) => {
+          exrate.time_coinapi = formatTime(exrate.time_coinapi);
+        });
+
+        setPastData(exrates);
+      },
+      (err) => {
+        throw err;
+      }
+    );
   }, []);
 
-  useEffect(() => {
-    if (exrate) {
-      const { now, past } = getPrevDate(exrate?.time, 3);
-
-      fetchHistoricalTrades(past, now).then(
-        (data) => setPastData(data),
-        (err) => setError(err)
-      );
-    }
-  }, [exrate]);
-
   return (
-    <>
-      {/* <GlobalStyle /> */}
-      <button onClick={sendMessage}>Send Hello</button>
-      <button onClick={closeConnection}>Close connection</button>
-      {exrate && <ExRate rate={exrate.rate} />}
-      <Graph data={data} />
-    </>
+    <Container>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <Subscribtion label="BTC/USD" onClick={subscribe} />
+        {exrate && <ExRate exrate={exrate} status={status} />}
+      </ErrorBoundary>
+      <Graph data={pastData} />
+    </Container>
   );
 }
 

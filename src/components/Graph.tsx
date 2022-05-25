@@ -7,10 +7,10 @@ import {
   YAxis,
   Tooltip,
 } from 'recharts';
-import styled from 'styled-components';
+import { IHistoricalData } from '../types';
 
 interface GraphProps {
-  data: any;
+  data: IHistoricalData[];
 }
 
 const Graph: React.FC<GraphProps> = ({ data }) => {
@@ -21,14 +21,13 @@ const Graph: React.FC<GraphProps> = ({ data }) => {
       data={data}
       margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
     >
-      <Line type="monotone" dataKey="uv" stroke="#8884d8" />
-      <Line type="monotone" dataKey="pv" stroke="purple" />
+      <Line type="monotone" dataKey="price" stroke="#8884d8" />
       <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-      <XAxis dataKey="name" />
-      <YAxis />
+      <XAxis dataKey="time_coinapi" />
+      <YAxis dataKey="price" />
       <Tooltip />
     </LineChart>
   );
 };
 
-export default Graph;
+export default React.memo(Graph);
