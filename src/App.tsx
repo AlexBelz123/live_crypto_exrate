@@ -27,6 +27,7 @@ function App() {
   status = exrate && prevExrate < exrate.rate ? 'down' : 'up';
 
   const subscribe = () => {
+    console.log('BAABY');
     const jsonMsg = JSON.stringify({
       type: 'hello',
       apikey: apiKey,

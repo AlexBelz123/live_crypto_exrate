@@ -16,6 +16,7 @@ interface SubscribtionProps {
   onClick: () => void;
 }
 
+// I didnt add logic for unsubscription
 const Subscribtion: React.FC<SubscribtionProps> = ({ label, onClick }) => {
   return (
     <StyledDiv>

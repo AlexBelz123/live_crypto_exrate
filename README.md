@@ -1,5 +1,13 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Launch the project
+
+You need to have yarn globally installed!:
+
+### `yarn install`
+
+### `yarn start`
+
 ## Available Scripts
 
 In the project directory, you can run:
