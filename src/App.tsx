@@ -9,6 +9,7 @@ import { ErrorFallback } from './utils/errorFallback';
 import { ErrorBoundary } from 'react-error-boundary';
 import { IExrate, IHistoricalData, TExrateStatus } from './types';
 import styled from 'styled-components';
+import { apiKey } from './constants';
 
 const Container = styled.div`
   padding: 0 10rem;
@@ -28,7 +29,7 @@ function App() {
   const subscribe = () => {
     const jsonMsg = JSON.stringify({
       type: 'hello',
-      apikey: 'F2228AEF-B564-4705-A4F5-1D4DE4803E88',
+      apikey: apiKey,
       heartbeat: false,
       subscribe_data_type: ['exrate'],
       subscribe_filter_asset_id: ['BTC/USD'],
